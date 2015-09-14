@@ -18,3 +18,13 @@
            (.rollback tx#))
          (throw t#)))))
 
+
+(defn wrap-entity-manager [handler]
+  (fn [request]
+    (with-entity-manager
+      (handler request))))
+
+(defn wrap-transaction [handler]
+  (fn [request]
+    (with-transaction
+      (handler request))))

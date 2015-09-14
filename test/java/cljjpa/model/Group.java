@@ -2,6 +2,7 @@ package cljjpa.model;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,5 +50,13 @@ public class Group implements Serializable {
 
     public void setMemberships(List<Membership> memberships) {
         this.memberships = memberships;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
     }
 }

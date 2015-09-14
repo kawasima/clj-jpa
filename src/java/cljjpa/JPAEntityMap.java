@@ -1,5 +1,6 @@
 package cljjpa;
 
+import clojure.java.api.Clojure;
 import clojure.lang.*;
 
 import javax.persistence.Entity;
@@ -15,13 +16,14 @@ import java.util.*;
 /**
  * @author kawasima
  */
-public class JPAEntityMap<E> implements IPersistentMap {
+public class JPAEntityMap<E> implements IPersistentMap, IObj {
     final IPersistentMap attributeMap;
     final IPersistentMap _meta;
 
     public JPAEntityMap(final EntityManager em, final E entity) {
         Map<Keyword, Object> attributes = new HashMap<>();
-        EntityType<E> entityType = (EntityType<E>) em.getMetamodel().entity(entity.getClass());
+
+        EntityType<E> entityType =(EntityType<E>) em.getMetamodel().entity(entity.getClass());
         for (final Attribute<E, ?> attribute : entityType.getDeclaredAttributes()) {
             Object value;
 
@@ -39,7 +41,7 @@ public class JPAEntityMap<E> implements IPersistentMap {
             attributes.put(Keyword.intern(CaseConversionUtils.toKebab(attribute.getName())), value);
         }
         this.attributeMap = PersistentHashMap.create(attributes);
-        this._meta = PersistentHashMap.create(Keyword.intern("entity"), entity.getClass());
+        this._meta = PersistentHashMap.create(Keyword.intern("entity"), entity);
     }
 
     protected JPAEntityMap(IPersistentMap meta, IPersistentMap pmap) {
@@ -59,17 +61,17 @@ public class JPAEntityMap<E> implements IPersistentMap {
 
     @Override
     public IPersistentMap assoc(Object key, Object value) {
-        return new JPAEntityMap(meta(), assoc(key, value));
+        return new JPAEntityMap(meta(), attributeMap.assoc(key, value));
     }
 
     @Override
     public IPersistentMap assocEx(Object key, Object value) {
-        return new JPAEntityMap(meta(), assocEx(key, value));
+        return new JPAEntityMap(meta(), attributeMap.assocEx(key, value));
     }
 
     @Override
     public IPersistentMap without(Object key) {
-        return new JPAEntityMap(meta(), without(key));
+        return new JPAEntityMap(meta(), attributeMap.without(key));
     }
 
     @Override
@@ -155,5 +157,10 @@ public class JPAEntityMap<E> implements IPersistentMap {
         } catch (IllegalAccessException| InvocationTargetException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    @Override
+    public JPAEntityMap withMeta(IPersistentMap meta) {
+        return new JPAEntityMap(meta, attributeMap);
     }
 }

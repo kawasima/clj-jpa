@@ -68,4 +68,12 @@ public class User implements Serializable {
     public void setMemberships(List<Membership> memberships) {
         this.memberships = memberships;
     }
+
+    public List<Group> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(List<Group> groups) {
+        this.groups = groups;
+    }
 }
