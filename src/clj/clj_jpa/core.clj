@@ -1,30 +1,9 @@
 (ns clj-jpa.core
-  (:require [clj-jpa.entity-manager :as em]
-            [clj-jpa.query :as query]))
+  (:require [clj-jpa.util]))
 
 (defmacro with-entity-manager [& body]
-  `(binding [~'clj-jpa.entity-manager/*em* (em/create-entity-manager)]
-     ~@body))
+  `(clj-jpa.util/with-entity-manager ~@body))
 
 (defmacro with-transaction [& body]
-  `(let [tx# (.getTransaction ~'clj-jpa.entity-manager/*em*)]
-     (.begin tx#)
-     (try
-       (let [ret# (do ~@body)]
-         (.commit tx#)
-         ret#) 
-       (catch Throwable t#
-         (when (.isActive tx#)
-           (.rollback tx#))
-         (throw t#)))))
+  `(clj-jpa.util/with-transaction ~@body))
 
-
-(defn wrap-entity-manager [handler]
-  (fn [request]
-    (with-entity-manager
-      (handler request))))
-
-(defn wrap-transaction [handler]
-  (fn [request]
-    (with-transaction
-      (handler request))))

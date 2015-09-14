@@ -1,7 +1,10 @@
 package cljjpa.model;
 
 import javax.persistence.*;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -17,6 +20,10 @@ public class User implements Serializable {
     private String lastName;
 
     private String emailAddress;
+    private int age;
+
+    @Temporal(TemporalType.DATE)
+    private Date birthday;
 
     @OneToMany(mappedBy = "user")
     private List<Membership> memberships;
@@ -59,6 +66,22 @@ public class User implements Serializable {
 
     public void setEmailAddress(String emailAddress) {
         this.emailAddress = emailAddress;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public Date getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(Date birthday) {
+        this.birthday = birthday;
     }
 
     public List<Membership> getMemberships() {

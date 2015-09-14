@@ -21,7 +21,6 @@
                     (.. *em* (merge (.. (EntityFactory. *em* (class entity)) (create m)))))))
   ([entity-class m]
    (let [entity (.. (EntityFactory. *em* entity-class) (create m))]
-     (println (bean entity))
      (JPAEntityMap. *em* (.. *em* (merge entity))))))
 
 (defn remove
@@ -50,18 +49,26 @@
   ([query-name entity-class]
    (.. *em* (createNativeQuery query-name entity-class))))
 
-(defn search-by-criteria [entity-class options]
+(defn search-by-criteria [entity-class {:keys [where order limit offset] :as options}]
   (let [builder (gensym 'builder)
-        root (gensym 'root)]
+        root (gensym 'root)
+        criteria-query (gensym 'citeria-query)
+        query (gensym 'query)]
     `(let [~builder (.getCriteriaBuilder ~'clj-jpa.entity-manager/*em*)
-           criteria-query# (.createQuery ~builder ~entity-class)
-           ~root (.from criteria-query# ~entity-class)]
-       (when (:where ~options)
-         (.where criteria-query# ~(query/parse-where builder root (:where `~options))))
+           ~criteria-query (.createQuery ~builder ~entity-class)
+           ~root (.from ~criteria-query ~entity-class)]
+       ~(when-let [where (:where `~options)]
+          `(.where ~criteria-query ~(query/parse-where builder root `~where)))
        
-       (let [query# (.. ~'clj-jpa.entity-manager/*em*
-                        (createQuery criteria-query#))]
-         (query/result-list query# ~'clj-jpa.entity-manager/*em*)))))
+       ~(when `~order
+         `(.orderBy ~criteria-query ~(query/parse-order builder root `~order)))
+       (let [~query (.. ~'clj-jpa.entity-manager/*em*
+                        (createQuery ~criteria-query))]
+         (when ~limit
+           (query/limit ~query ~limit))
+         (when ~offset
+           (query/offset ~query ~offset))
+         (query/result-list ~query ~'clj-jpa.entity-manager/*em*)))))
 
 (defn search-by-sql [entity-class {:keys [sql params]}]
   (let [query (.. *em* (createNativeQuery sql entity-class))]
@@ -69,10 +76,14 @@
        (query/parameters query params))
      (query/result-list query *em*)))
 
-(defn search-by-jpql [entity-class {:keys [jpql params]}]
+(defn search-by-jpql [entity-class {:keys [jpql params limit offset]}]
   (let [query (.. *em* (createQuery jpql entity-class))]
      (when params
        (query/parameters query params))
+     (when limit
+       (query/limit query limit))
+     (when offset
+       (query/offset query offset))
      (query/result-list query *em*)))
 
 (defmacro search [entity-class & {:as options}]

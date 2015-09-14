@@ -2,33 +2,24 @@
   (:require [clj-jpa.core :refer :all]
             [clj-jpa.entity-manager :as em]
             [clj-jpa.query :as query]
+            [clj-jpa.fixture :refer :all]
             [clojure.test :refer :all])
-  (:import [org.jboss.weld.environment.se Weld]
-           [cljjpa.model User Group]))
+  (:import [cljjpa.model User Group]))
 
 
-(defn wrap-weld-setup [f]
-  (.. (Weld.) initialize)
-  (f))
-
-(defn wrap-table-setup [f]
+(defn em-setup [f]
   (with-entity-manager
     (with-transaction
-      (-> (em/create-native-query "DELETE FROM membership")
-          (query/execute-update)) 
-      (-> (em/create-native-query "DELETE FROM user")
-          (query/execute-update)) 
-      (-> (em/create-native-query "DELETE FROM groups")
-          (query/execute-update))
       (let [user (em/merge User {:family-name "Kawashima"
-                                 :last-name "Yoshitaka"
-                                 :email-address "kawasima1016@gmail.com"})]
+                                  :last-name "Yoshitaka"
+                                  :email-address "kawasima1016@gmail.com"
+                                  :age (int 10)})]
         (em/merge Group {:name "group1"
                          :users [user]}))))
   (f))
 
 (use-fixtures :once wrap-weld-setup)
-(use-fixtures :each wrap-table-setup)
+(use-fixtures :each (join-fixtures [wrap-table-setup em-setup]))
 
 (testing "Search API"
   (deftest entity-manager-creation

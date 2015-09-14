@@ -49,7 +49,6 @@
    'or  'clj-jpa.query/pred-or
    'not 'clj-jpa.query/pred-not
    'in  'clj-jpa.query/pred-in
-   'exists 'clj-jpa.query/pred-exists
    'not-in 'clj-jpa.query/pred-not-in
    'between 'clj-jpa.query/pred-between
    '>   'clj-jpa.query/pred->
@@ -87,8 +86,6 @@
 (defn pred-in [builder root x values]
   (.in (expr root x) values))
 
-(defn pred-exists [builder root subquery])
-
 (defn pred-between [builder root v x y]
   (.between builder
             (expr root v)
@@ -113,4 +110,13 @@
 (defn pred-<= [builder root x y]
   (.le builder (expr root x) (expr root y)))
 
+(defn parse-order [builder root order-list]
+  (->> order-list
+       (map #(cond
+               (keyword? %) (list '.desc builder (expr root %))
+               (list? %) (condp = (first %)
+                           'asc  (list '.asc builder (list 'clj-jpa.query/expr root (second %)))
+                           'desc (list '.desc builder (list 'clj-jpa.query/expr root (second %))))
+               :else (throw (Exception. "hhohoho"))))
+       vec))
 
